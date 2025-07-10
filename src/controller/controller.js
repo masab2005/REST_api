@@ -1,6 +1,7 @@
 import asyncHandler from "express-async-handler";
 import User from "../models/model.js";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
 const getUser = asyncHandler(async (req, res) => {
     const users = await User.find()
@@ -35,6 +36,28 @@ const createUser = asyncHandler(async (req, res) => {
     res.status(201).json(user) 
 })
 
+const loginUser = asyncHandler(async (req,res)=>{
+    const {email,password} = req.body
+    console.log("Login attempt with email:", email);
+    if(!email || !password){
+        res.status(400)
+        throw new Error("Email and password are required")
+    }
+    const user = await User.findOne({email})
+    if(!user){
+        console.log("user not found!")
+        res.status(401)
+        throw new Error("user not found!")
+    }
+    const checkPassword = await bcrypt.compare(password,user.password)
+    if(!checkPassword){
+        res.status(401)
+        throw new Error("password is incorrect!")
+    }
+    const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:"30s"})
+    res.status(200).json({token})
+})
+
 const updateUser = asyncHandler(async (req, res) => { 
     const user = await User.findById(req.params.id)
     if(!user){
@@ -55,4 +78,4 @@ const deleteUser = asyncHandler(async (req, res) => {
     res.status(200).json({ message: `User with id ${req.params.id} deleted successfully` })
 })            
 
-export { getUser, getUserById, createUser, updateUser, deleteUser }
+export { getUser, getUserById, createUser,loginUser, updateUser, deleteUser }

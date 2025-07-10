@@ -29,6 +29,13 @@ const errorHandler = (err, req, res, next) => {
             stack : err.stack
         })
         break;
+        default:
+        res.json({
+            title : "default error",
+            message: err.message,
+            stack : err.stack
+        })
+        break;
     }
 
 }
