@@ -3,11 +3,22 @@ import User from "../models/model.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
+/**
+ * Get all users with pagination
+ * @route GET /api/users
+ * @access Private
+ */
 const getUser = asyncHandler(async (req, res) => {
-    const users = await User.find()
-    res.status(200).json(users)
-})
+    const { page, limit } = req.query;
+    const result = await userService.getUsers({ page, limit });
+    res.status(200).json(result);
+});
 
+/**
+ * Get user by ID
+ * @route GET /api/users/:id
+ * @access Private
+ */
 const getUserById = asyncHandler(async (req, res) => { 
     const user = await User.findById(req.params.id)
     if(!user){
@@ -17,6 +28,11 @@ const getUserById = asyncHandler(async (req, res) => {
     res.status(200).json(user)
 })
 
+/**
+ * Create a new user
+ * @route POST /api/register
+ * @access Public
+ */
 const createUser = asyncHandler(async (req, res) => { 
     const {name, email, password}  = req.body
 
@@ -38,23 +54,23 @@ const createUser = asyncHandler(async (req, res) => {
 
 const loginUser = asyncHandler(async (req,res)=>{
     const {email,password} = req.body
-    console.log("Login attempt with email:", email);
     if(!email || !password){
         res.status(400)
         throw new Error("Email and password are required")
     }
+    
     const user = await User.findOne({email})
     if(!user){
-        console.log("user not found!")
         res.status(401)
         throw new Error("user not found!")
     }
+    
     const checkPassword = await bcrypt.compare(password,user.password)
     if(!checkPassword){
         res.status(401)
         throw new Error("password is incorrect!")
     }
-    const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:"30s"})
+    const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:"10m"})
     res.status(200).json({token})
 })
 
@@ -64,6 +80,8 @@ const updateUser = asyncHandler(async (req, res) => {
         res.status(404)
         throw new Error("User not found")
     }
+    const hashedPassword = await bcrypt.hash(req.body.password, 10)
+    req.body.password = hashedPassword
     const updatedUser = await User.findByIdAndUpdate(req.params.id, req.body, {new: true})
     res.status(200).json(updatedUser)
 })
