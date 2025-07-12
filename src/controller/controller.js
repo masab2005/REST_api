@@ -52,6 +52,11 @@ const createUser = asyncHandler(async (req, res) => {
     res.status(201).json(user) 
 })
 
+/**
+ * Login user and generate tokens
+ * @route POST /api/login
+ * @access Public
+ */
 const loginUser = asyncHandler(async (req,res)=>{
     const {email,password} = req.body
     if(!email || !password){
@@ -70,9 +75,103 @@ const loginUser = asyncHandler(async (req,res)=>{
         res.status(401)
         throw new Error("password is incorrect!")
     }
-    const token = jwt.sign({id:user._id},process.env.JWT_SECRET,{expiresIn:"10m"})
-    res.status(200).json({token})
+
+    // Generate access token
+    const accessToken = generateAccessToken(user._id);
+    
+    // Generate refresh token
+    const refreshToken = jwt.sign(
+        {id: user._id},
+        process.env.JWT_REFRESH_SECRET,
+        {expiresIn: "7d"}
+    );
+
+    // Save refresh token to database
+    await User.findByIdAndUpdate(user._id, { refreshToken });
+    
+    // Set refresh token in HTTP-only cookie
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    res.status(200).json({
+        accessToken
+    });
 })
+
+/**
+ * Refresh access token
+ * @route POST /api/refresh-token
+ * @access Public (with refresh token)
+ */
+const refreshToken = asyncHandler(async (req, res) => {
+    // Get refresh token from cookie
+    const refreshToken = req.cookies.refreshToken;
+    
+    if (!refreshToken) {
+        res.status(401);
+        throw new Error("Refresh token is required");
+    }
+    
+    try {
+        // Verify refresh token
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        
+        // Check if user exists and token matches
+        const user = await User.findById(decoded.id);
+        
+        if (!user || user.refreshToken !== refreshToken) {
+            res.status(403);
+            throw new Error("Invalid refresh token");
+        }
+        
+        // Generate new access token
+        const accessToken = generateAccessToken(user._id);
+        
+        res.status(200).json({ accessToken });
+    } catch (error) {
+        res.status(403);
+        throw new Error("Invalid or expired refresh token");
+    }
+});
+
+/**
+ * Logout user
+ * @route POST /api/logout
+ * @access Public
+ */
+const logout = asyncHandler(async (req, res) => {
+    // Get refresh token from cookie
+    const refreshToken = req.cookies.refreshToken;
+    
+    if (refreshToken) {
+        // Find user with this refresh token and clear it
+        await User.findOneAndUpdate(
+            { refreshToken },
+            { refreshToken: null }
+        );
+    }
+    
+    // Clear the cookie
+    res.clearCookie('refreshToken');
+    
+    res.status(200).json({ message: "Logged out successfully" });
+});
+
+/**
+ * Generate access token
+ * @private
+ */
+const generateAccessToken = (userId) => {
+    return jwt.sign(
+        { id: userId },
+        process.env.JWT_ACCESS_SECRET,
+        { expiresIn: "15m" }
+    );
+};
 
 const updateUser = asyncHandler(async (req, res) => { 
     const user = await User.findById(req.params.id)
@@ -96,4 +195,4 @@ const deleteUser = asyncHandler(async (req, res) => {
     res.status(200).json({ message: `User with id ${req.params.id} deleted successfully` })
 })            
 
-export { getUser, getUserById, createUser,loginUser, updateUser, deleteUser }
+export { getUser, getUserById, createUser, loginUser, updateUser, deleteUser, refreshToken, logout }
