@@ -9,9 +9,45 @@ import jwt from "jsonwebtoken";
  * @access Private
  */
 const getUser = asyncHandler(async (req, res) => {
-    const { page, limit } = req.query;
-    const result = await userService.getUsers({ page, limit });
-    res.status(200).json(result);
+    // Parse pagination parameters with defaults
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    
+    // Validate pagination parameters
+    if (page < 1) {
+        res.status(400);
+        throw new Error("Page must be at least 1");
+    }
+    
+    if (limit < 1 || limit > 100) {
+        res.status(400);
+        throw new Error("Limit must be between 1 and 100");
+    }
+    
+    // Calculate skip value
+    const skip = (page - 1) * limit;
+    
+    // Execute query with pagination
+    const [results, totalCount] = await Promise.all([
+        User.find().skip(skip).limit(limit),
+        User.countDocuments()
+    ]);
+    
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
+    
+    // Return paginated results with metadata
+    res.status(200).json({
+        results,
+        pagination: {
+            totalCount,
+            totalPages,
+            currentPage: page,
+            limit,
+            hasNextPage: page < totalPages,
+            hasPrevPage: page > 1
+        }
+    });
 });
 
 /**
@@ -192,6 +228,9 @@ const deleteUser = asyncHandler(async (req, res) => {
         throw new Error("User not found")
     }
     await User.findByIdAndDelete(req.params.id)
+    res.clearCookie('refreshToken');
+    res.clearCookie('accessToken');
+    
     res.status(200).json({ message: `User with id ${req.params.id} deleted successfully` })
 })            
 
