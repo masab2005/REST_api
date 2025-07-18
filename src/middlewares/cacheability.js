@@ -9,7 +9,6 @@ const cacheability = (duration) =>{
         }
 
         const key = req.originalUrl;
-        console.log(key);
         const cacheResponse = cache.get(key)
 
         if(cacheResponse){

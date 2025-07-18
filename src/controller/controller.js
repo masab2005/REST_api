@@ -10,6 +10,11 @@ import jwt from "jsonwebtoken";
  */
 const getUser = asyncHandler(async (req, res) => {
     // Parse pagination parameters with defaults
+    if (!req.user || req.user.role !== 'admin') {
+        res.status(403);
+        throw new Error("Only admin access!");
+    }
+
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     
@@ -82,7 +87,8 @@ const createUser = asyncHandler(async (req, res) => {
     const user = await User.create({
         name,
         email,
-        password: hashedPassword
+        password: hashedPassword,
+        role : 'user'
     })
 
     res.status(201).json(user) 
@@ -203,7 +209,7 @@ const logout = asyncHandler(async (req, res) => {
  */
 const generateAccessToken = (userId) => {
     return jwt.sign(
-        { id: userId },
+        { id: userId, role:User.role },
         process.env.JWT_ACCESS_SECRET,
         { expiresIn: "15m" }
     );

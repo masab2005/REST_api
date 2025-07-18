@@ -1,14 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import fetch from 'node-fetch';
-
-const BASE_URL = 'http://localhost:5001/api';
-
-const testUser = {
-  name: 'Test User',
-  email: `testuser_${Date.now()}@example.com`,
-  password: 'TestPassword123!'
-};
+import {BASE_URL, testUser} from '../util/testUtils.js'
 
 let userId;
 let accessToken;
@@ -43,7 +35,7 @@ test('Full CRUD e2e flow', async (t) => {
   });
   assert.strictEqual(getUserRes.status, 200, 'Get user by ID should return 200');
   const userData = await getUserRes.json();
-  console.log('Fetched userData:', userData);
+  
   // Try to find the email in userData, whether it's a direct property or nested
   let fetchedEmail = userData.email;
   if (!fetchedEmail && userData.user) fetchedEmail = userData.user.email;

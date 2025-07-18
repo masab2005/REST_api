@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert';
-import fetch from 'node-fetch';
-
-const BASE_URL = 'http://localhost:5001/api';
+import {BASE_URL} from '../util/testUtils.js'
 
 test('should block NoSQL injection in login', async () => {
   const maliciousPayload = {

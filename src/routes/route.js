@@ -17,8 +17,8 @@ import { registerValidation, loginValidation, updateValidation, paginationValida
 
 // Public routes
 route.use(sanitizeKeys); //prevent sql injection
-route.post('/register',  registerValidation, createUser)
-     .post('/login',  loginValidation, loginUser)
+route.post('/register',loginLimiter,  registerValidation, createUser)
+     .post('/login',loginLimiter, loginValidation, loginUser)
      .post('/refresh-token', refreshToken)
      .post('/logout', logout);
 
