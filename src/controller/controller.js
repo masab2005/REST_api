@@ -9,12 +9,12 @@ import jwt from "jsonwebtoken";
  * @access Private
  */
 const getUser = asyncHandler(async (req, res) => {
-    // Parse pagination parameters with defaults
+   //authorized admin access only
     if (!req.user || req.user.role !== 'admin') {
         res.status(403);
         throw new Error("Only admin access!");
     }
-
+ // Parse pagination parameters with defaults
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 10;
     
@@ -119,11 +119,11 @@ const loginUser = asyncHandler(async (req,res)=>{
     }
 
     // Generate access token
-    const accessToken = generateAccessToken(user._id);
+    const accessToken = generateAccessToken(user);
     
     // Generate refresh token
     const refreshToken = jwt.sign(
-        {id: user._id},
+        {id: user._id,role: user.role},
         process.env.JWT_REFRESH_SECRET,
         {expiresIn: "7d"}
     );
@@ -171,7 +171,7 @@ const refreshToken = asyncHandler(async (req, res) => {
         }
         
         // Generate new access token
-        const accessToken = generateAccessToken(user._id);
+        const accessToken = generateAccessToken(user);
         
         res.status(200).json({ accessToken });
     } catch (error) {
@@ -207,9 +207,9 @@ const logout = asyncHandler(async (req, res) => {
  * Generate access token
  * @private
  */
-const generateAccessToken = (userId) => {
+const generateAccessToken = (user) => {
     return jwt.sign(
-        { id: userId, role:User.role },
+        { id: user._id, role: user.role },
         process.env.JWT_ACCESS_SECRET,
         { expiresIn: "15m" }
     );

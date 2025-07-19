@@ -5,13 +5,17 @@ import route from "./src/routes/route.js";
 import errorHandler from "./src/middlewares/errorHandler.js";
 import {apiLimiter} from "./src/middlewares/rateLimits.js";
 import db_conn from "./src/config/db_conn.js";
+import corsConfig from "./src/middlewares/corsConfig.js";
+import helmet from "helmet";
 dotenv.config();
 db_conn()
 const app = express();
 
 const PORT = process.env.PORT || 5000;
 
-app.use(express.json());
+app.use(corsConfig);
+app.use(helmet());
+app.use(express.json()); //Helmet sets secure HTTP headers (CSP, X-Frame-Options, etc) to block common web attacks
 app.use(cookieParser());
 app.use(apiLimiter)
 app.use("/api",route);
