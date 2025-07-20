@@ -21,6 +21,11 @@ app.use(apiLimiter)
 app.use("/api",route);
 app.use(errorHandler)
 
+// Add a root endpoint for health check
+app.get('/', (req, res) => {
+    res.json({ status: 'API is working' });
+});
+
 app.listen(PORT , ()=>{
     console.log(`Server is running on port ${PORT}`)
 });
