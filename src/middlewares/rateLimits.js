@@ -2,13 +2,13 @@ import rateLimit from 'express-rate-limit';
 
 // Create a limiter for login attempts
 export const loginLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // 5 requests per windowMs per IP
+  windowMs: 5 * 60 * 1000, // 5 minutes
+  max: 8, // 5 requests per windowMs per IP
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
   message: {
     status: 429,
-    message: 'Too many login attempts, please try again after 15 minutes'
+    message: 'Too many login attempts, please try again after 5 minutes'
   }
 });
 
