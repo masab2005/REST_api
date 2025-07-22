@@ -8,7 +8,7 @@ const CREDENTIALS = process.env.CREDENTIALS === 'true';
 
 export default cors({
   origin: function (origin, callback) {
-    if (allowed_Origins.includes(origin)) {
+    if (!origin || allowed_Origins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));

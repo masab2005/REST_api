@@ -1,4 +1,6 @@
 import rateLimit from 'express-rate-limit';
+// Trust the proxy (required for correct IP detection on Railway and for express-rate-limit)
+app.set('trust proxy', true);
 
 // Create a limiter for login attempts
 export const loginLimiter = rateLimit({
