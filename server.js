@@ -10,6 +10,8 @@ import helmet from "helmet";
 dotenv.config();
 db_conn()
 const app = express();
+// Trust the proxy (required for correct IP detection on Railway and for express-rate-limit)
+app.set('trust proxy', true);
 
 const PORT = process.env.PORT || 5000;
 
